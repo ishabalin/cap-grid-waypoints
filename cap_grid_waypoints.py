@@ -62,7 +62,12 @@ GSIZE = 0.25
 QSIZE = 0.125
 
 
-def gen_grid(name, number, path):
+def write_grid_kml(name, number, path):
+    """
+    Given a grid `name` and `number` write a KML file named
+    "{name}{number}.kml" under the directory specified by `path`.
+
+    """
     conf = GRIDS[name]
     rows = conf['rows']
     cols = conf['cols']
@@ -101,6 +106,33 @@ def gen_grid(name, number, path):
         print(KML_TEMPLATE % ET.tostring(d, encoding='unicode'), file=f)
 
 
+def parse_grid_spec(grid):
+    """
+    Parse grid range specification and return an iterator over
+    (name, numbers) tuples.
+
+    """
+    name = grid[:3]
+    if len(name) < 3 or not name.isalpha():
+        raise ValueError(f'Invalid grid spec: {grid}')
+    if len(grid) == 3:
+        # entire grid
+        rows = GRIDS[name]['rows']
+        cols = GRIDS[name]['cols']
+        yield name, range(1, rows * cols + 1)
+        return
+    for range_spec in grid[3:].split(','):
+        try:
+            parts = range_spec.split('-', 1)
+            if len(parts) > 1:
+                range_min, range_max = map(int, parts)
+            else:
+                range_min = range_max = int(range_spec)
+        except ValueError:
+            raise ValueError(f'Invalid grid spec: {grid}')
+        yield name, range(range_min, range_max + 1)
+
+
 parser = argparse.ArgumentParser(
     description='Generate CAP grid waypoints')
 parser.add_argument(
@@ -113,38 +145,15 @@ parser.add_argument(
     help='output directory')
 
 
-def parse_grid(grid):
-    name = grid[:3]
-    if len(name) < 3 or not name.isalpha():
-        raise ValueError(f'Invalid grid spec: {grid}')
-    if len(grid) == 3:
-        # entire grid
-        rows = GRIDS[name]['rows']
-        cols = GRIDS[name]['cols']
-        yield name, range(1, rows * cols + 1)
-        return
-    range_specs = grid[3:].split(',')
-    for spec in range_specs:
-        try:
-            parts = spec.split('-', 1)
-            if len(parts) > 1:
-                range_min, range_max = map(int, parts)
-            else:
-                range_min = range_max = int(spec)
-        except ValueError:
-            raise ValueError(f'Invalid grid spec: {grid}')
-        yield name, range(range_min, range_max + 1)
-
-
 def main():
     args = parser.parse_args()
     path = Path(args.output_dir or '.')
     path.mkdir(parents=True, exist_ok=True)
 
     for grid in args.grids:
-        for name, numbers in parse_grid(grid):
+        for name, numbers in parse_grid_spec(grid):
             for number in numbers:
-                gen_grid(name, number, path)
+                write_grid_kml(name, number, path)
 
 
 if __name__ == '__main__':
