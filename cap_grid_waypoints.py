@@ -18,6 +18,12 @@ KML_TEMPLATE = """\
 
 # grid dimensions
 GRIDS = {
+    'LMT': {
+        'cols': 32,
+        'rows': 18,
+        'lat': 44.5,
+        'lon': 125.0,
+    },
     'SFO': {
         'cols': 28,
         'rows': 16,
@@ -87,7 +93,10 @@ def gen_grid(name, number, path):
             sub(pp, 'altitudeMode').text = 'absolute'
             sub(pp, 'coordinates').text = f'-{lon},{lat}'
 
-    ET.indent(d, space='  ')
+    # Python 3.9+
+    if hasattr(ET, 'indent'):
+        ET.indent(d, space='  ')
+
     with path.joinpath(f'{name}{number}.kml').open('w') as f:
         print(KML_TEMPLATE % ET.tostring(d, encoding='unicode'), file=f)
 
