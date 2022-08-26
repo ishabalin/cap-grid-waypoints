@@ -24,11 +24,24 @@ GRIDS = {
         'lat': 44.5,
         'lon': 125.0,
     },
+    'SEA': {
+        'cols': 32,
+        'rows': 18,
+        'lat': 49.0,
+        'lon': 125.0,
+    },
     'SFO': {
         'cols': 28,
         'rows': 16,
         'lat': 40.0,
         'lon': 125.0,
+    },
+    'LAS': {
+        'cols': 28,
+        'rows': 17,
+        'lat': 40.0,
+        'lon': 118.0,
+        'skip': range(449, 461),
     },
     'LAX': {
         'cols': 26,
@@ -152,7 +165,10 @@ def main():
 
     for grid in args.grids:
         for name, numbers in parse_grid_spec(grid):
+            skip = GRIDS[name].get('skip', ())
             for number in numbers:
+                if number in skip:
+                    continue
                 write_grid_kml(name, number, path)
 
 
